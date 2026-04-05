@@ -1,0 +1,68 @@
+# Storytelling — Desafio Data Analytics
+
+## Contexto
+
+Este projeto simula o ciclo completo de análise de dados de um e-commerce fictício, desde a geração e tratamento dos dados até a criação de um modelo preditivo de vendas.
+
+---
+
+## Sprint 1 — ETL
+
+Os dados foram gerados sinteticamente com 5.001 pedidos, cobrindo 6 clientes, 5 produtos e 4 cidades ao longo de 2024. Após a geração, foram aplicadas etapas de limpeza (remoção de nulos e duplicatas), padronização de formatos e carga em um banco de dados SQLite.
+
+**Insight:** A base chegou limpa — nenhum dado nulo ou duplicado foi encontrado, o que indica que o processo de geração foi consistente. Em dados reais, essa etapa costuma ser a mais trabalhosa.
+
+---
+
+## Sprint 2 — EDA e SQL
+
+Com os dados carregados, foram realizadas análises exploratórias para entender o comportamento das vendas.
+
+**Principais descobertas:**
+
+- A receita se distribuiu de forma relativamente equilibrada entre os produtos, sem um dominante claro — esperado dado o dataset sintético.
+- A correlação entre preço e receita foi alta, enquanto quantidade e preço não apresentaram correlação significativa, indicando que compras de alto valor não necessariamente envolvem mais unidades.
+- Na segmentação RFM, a maioria dos clientes foi classificada como **Leal** ou **Em risco**, refletindo a distribuição aleatória de compras ao longo do ano.
+
+**Insight:** Em um cenário real, clientes classificados como "Em risco" seriam o principal alvo de campanhas de retenção.
+
+---
+
+## Sprint 3 — Dashboard
+
+O dashboard construído com Streamlit permitiu explorar os dados de forma interativa, com filtros por cliente, produto, cidade e período.
+
+**KPIs monitorados:**
+- Faturamento total
+- Ticket médio
+- Total de pedidos
+- Clientes ativos
+- Taxa de retenção
+
+**Insight:** A taxa de retenção é uma métrica crítica para e-commerces. Clientes que compram em mais de um mês tendem a ter LTV (lifetime value) significativamente maior.
+
+---
+
+## Sprint 4 — Modelo Preditivo
+
+Foi implementada uma regressão linear simples para prever a receita mensal com base na evolução temporal.
+
+**Resultados:**
+- O modelo capturou a tendência geral de crescimento ou estabilidade da receita ao longo dos meses.
+- O R² indica o quanto da variação da receita é explicada pelo tempo — em dados sintéticos sem sazonalidade forçada, valores moderados são esperados.
+- O MAE indica o erro médio em reais nas previsões, útil para calibrar expectativas de negócio.
+
+**Insight:** Regressão linear é um bom ponto de partida, mas modelos como ARIMA ou Prophet seriam mais adequados para séries temporais com sazonalidade real. O próximo passo natural seria incorporar variáveis externas (ex: datas comemorativas, campanhas) para melhorar a acurácia.
+
+---
+
+## Conclusão
+
+O projeto demonstrou na prática as etapas fundamentais de um pipeline de dados:
+
+1. **Coleta e tratamento** — ETL com pandas e SQLite
+2. **Análise exploratória** — estatísticas descritivas, SQL, outliers e correlação
+3. **Visualização** — dashboard interativo com Streamlit
+4. **Modelagem** — previsão de vendas com regressão linear
+
+Cada sprint construiu sobre o anterior, simulando o fluxo real de trabalho de um analista ou cientista de dados.

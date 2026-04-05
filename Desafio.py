@@ -1,12 +1,12 @@
 import pandas as pd
 import sqlite3
-import streamlit as st
 import matplotlib.pyplot as plt
 from pathlib import Path
-
-# ============================================================
-# SPRINT 3: Dashboard com Streamlit
-# ============================================================
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, r2_score
+import numpy as np
+import streamlit as st
 
 BASE_DIR = Path(__file__).parent
 
@@ -68,7 +68,6 @@ ticket_medio = df_filtrado["receita"].mean()
 total_pedidos = len(df_filtrado)
 clientes_ativos = df_filtrado["cliente"].nunique()
 
-# Taxa de retenção — clientes que compraram em mais de 1 mês
 compras_por_mes = df_filtrado.groupby("cliente")["mes"].nunique()
 retidos = (compras_por_mes > 1).sum()
 retencao = retidos / clientes_ativos * 100 if clientes_ativos > 0 else 0
@@ -83,11 +82,10 @@ col5.metric("🔄 Taxa de Retenção",  f"{retencao:.1f}%")
 st.divider()
 
 # ============================================================
-# GRÁFICOS
+# GRÁFICOS — SPRINT 3
 # ============================================================
 col_a, col_b = st.columns(2)
 
-# Série temporal — faturamento mensal
 with col_a:
     st.subheader("📅 Faturamento Mensal (Sazonalidade)")
     fat_mensal = df_filtrado.groupby("mes")["receita"].sum().reset_index()
@@ -99,7 +97,6 @@ with col_a:
     plt.tight_layout()
     st.pyplot(fig)
 
-# Receita por produto
 with col_b:
     st.subheader("📦 Receita por Produto")
     fat_produto = df_filtrado.groupby("produto")["receita"].sum().sort_values()
@@ -111,7 +108,6 @@ with col_b:
 
 col_c, col_d = st.columns(2)
 
-# Receita por cidade
 with col_c:
     st.subheader("🏙️ Receita por Cidade")
     fat_cidade = df_filtrado.groupby("cidade")["receita"].sum().sort_values()
@@ -121,7 +117,6 @@ with col_c:
     plt.tight_layout()
     st.pyplot(fig)
 
-# Pedidos por cliente
 with col_d:
     st.subheader("👤 Pedidos por Cliente")
     pedidos_cliente = df_filtrado.groupby("cliente")["id_pedido"].count().sort_values()
@@ -133,7 +128,58 @@ with col_d:
 
 st.divider()
 
-# Tabela de dados filtrados
 st.subheader("🗂️ Dados Filtrados")
-
 st.dataframe(df_filtrado.sort_values("data_pedido", ascending=False), use_container_width=True)
+
+st.divider()
+
+# ============================================================
+# SPRINT 4: Modelo Preditivo — Regressão Linear
+# ============================================================
+st.subheader("🤖 Previsão de Receita — Regressão Linear")
+
+df["mes_num"] = df["data_pedido"].dt.to_period("M").apply(lambda x: x.ordinal)
+fat_modelo = df.groupby("mes_num")["receita"].sum().reset_index()
+
+X = fat_modelo[["mes_num"]]
+y = fat_modelo["receita"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+modelo = LinearRegression()
+modelo.fit(X_train, y_train)
+
+y_pred = modelo.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+r2  = r2_score(y_test, y_pred)
+
+# Métricas do modelo
+m1, m2 = st.columns(2)
+m1.metric("📉 MAE (Erro Médio)", f"R$ {mae:,.2f}")
+m2.metric("📈 R²", f"{r2:.4f}")
+
+# Previsão para os próximos 3 meses
+ultimo_mes = fat_modelo["mes_num"].max()
+proximos = pd.DataFrame({"mes_num": [ultimo_mes + 1, ultimo_mes + 2, ultimo_mes + 3]})
+previsoes = modelo.predict(proximos)
+
+st.markdown("**Previsão para os próximos 3 meses:**")
+p1, p2, p3 = st.columns(3)
+p1.metric("Mês +1", f"R$ {previsoes[0]:,.2f}")
+p2.metric("Mês +2", f"R$ {previsoes[1]:,.2f}")
+p3.metric("Mês +3", f"R$ {previsoes[2]:,.2f}")
+
+# Gráfico do modelo
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(fat_modelo["mes_num"], fat_modelo["receita"],
+        marker="o", label="Receita Real", color="steelblue")
+ax.plot(fat_modelo["mes_num"], modelo.predict(X),
+        linestyle="--", label="Tendência (Modelo)", color="orange")
+ax.scatter(proximos["mes_num"], previsoes,
+           marker="*", s=150, color="red", label="Previsão (+3 meses)", zorder=5)
+ax.set_title("Previsão de Receita")
+ax.set_xlabel("Mês (ordinal)")
+ax.set_ylabel("Receita (R$)")
+ax.legend()
+plt.tight_layout()
+st.pyplot(fig)
